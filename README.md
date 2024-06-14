@@ -6,6 +6,7 @@
 This dashboard is to support local coffee roasters and baristas to cope with the price fluctuation of global coffee price. 
 
 ## 2. Streamlit App URL
+https://coffeeflation.streamlit.app/
 
 ## 3. Author
 Joonsoo Kim (https://www.linkedin.com/in/kevinjoonsoo/)
