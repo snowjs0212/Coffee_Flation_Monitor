@@ -317,8 +317,8 @@ df_sidebar['Arabica Chg'] = df_sidebar['Arabica Chg'].map('{:.1%}'.format)
 #######################################################################################################
 #### Streamlit visualization
 ### Headers
-st.set_page_config(page_title = "Coffee-flation Monitor", page_icon="☕")
-st.title("Coffee-flation Monitor Dashboard :coffee:")
+st.set_page_config(page_title = "Coffee-flation", page_icon="☕")
+st.title("Coffee-flation Dashboard :coffee:")
 st.text("This open-source dashboard aids small coffee roasters \nin optimizing cost efficiency by providing insights into \nthe price fluctuations of essential coffee beans. \n\nWe believe that technology should serve our local businesses!")
 st.write(f"Developed and distributed by [**LookUp Consulting LLC**](https://www.lookupconsultancy.com/)")
 
