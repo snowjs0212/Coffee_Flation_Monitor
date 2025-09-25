@@ -68,6 +68,16 @@ df_base = df.tail(df_range)
 
 ### Melt the DataFrame to convert it to long format
 df_base = df_base[['Close Date', 'Robusta', 'Arabica',]]
+
+#### Make sure 'Close Date' is datetime
+df_base["Close Date"] = pd.to_datetime(df_base["Close Date"])
+
+#### Normalize to midnight to avoid time shift issues
+df_base["Close Date"] = pd.to_datetime(df_base["Close Date"]).dt.floor('D')
+
+#### Add exactly 1 day
+df_base["Close Date"] = df_base["Close Date"] + pd.Timedelta(days = 0.7)
+
 melted_df_base = df_base.melt(
     id_vars = "Close Date", 
     var_name = "Bean Type", 
@@ -103,11 +113,15 @@ selection = alt.selection_point(
 base_chart = (
     alt.Chart(melted_df_base).mark_line()
     .encode(
-        x = "Close Date:T",
+        x = alt.X(
+            "Close Date:T",   # bucket into month-year
+            axis = alt.Axis(title = "Close Date", format = "%b-%Y")  # MMM-YYYY format
+        ),
         y = alt.Y(
             "Price:Q", 
-            scale = alt.Scale(domain=[y_start, y_end])),
-        color = alt.Color("Bean Type:N", sort=output_list),
+            scale = alt.Scale(domain = [y_start, y_end])
+        ),
+        color = alt.Color("Bean Type:N", sort = output_list),
         # tooltip=['Ticker:N', 'Yield:Q']
     )
     .add_params(selection)
@@ -185,6 +199,13 @@ new_column_names = {
 }
 df_chg = df_chg.rename(columns = new_column_names)
 
+#### Make sure 'Close Date' is datetime
+df_chg["Close Date"] = pd.to_datetime(df_chg["Close Date"])
+
+#### Add exactly 1 day
+df_chg["Close Date"] = df_chg["Close Date"] + pd.Timedelta(days = 0.7)
+
+
 ### Melt the DataFrame to convert it to long format
 melted_df_chg = df_chg.melt(
     id_vars = "Close Date", 
@@ -216,15 +237,22 @@ selection = alt.selection_point(
     bind=input_dropdown,
 )
 
-### Basic line chart
+### Basic bar chart
 base_chart = (
-    alt.Chart(melted_df_chg).mark_line()
+    alt.Chart(melted_df_chg).mark_bar(size = 2.5)  # controls thickness
     .encode(
-        x = "Close Date:T",
+        # Use temporal with formatting
+        x = alt.X(
+            "yearmonth(Close Date):T", 
+            axis = alt.Axis(title = "Close Date", format = "%b-%Y")  # MMM-YYYY format
+        ),
         y = alt.Y(
-            "Change:Q", 
-            scale = alt.Scale(domain=[y_start, y_end])).axis(format='.1%'),
-        color = alt.Color("Bean Type:N", sort=output_list),
+            "Change:Q",
+            scale = alt.Scale(domain = [y_start, y_end]),
+            axis = alt.Axis(format = "%")
+        ),
+        color = alt.Color("Bean Type:N", sort = output_list),
+        xOffset = "Bean Type:N"   # side-by-side bars by Bean Type
         # tooltip=['Ticker:N', 'Yield:Q']
     )
     .add_params(selection)
