@@ -372,7 +372,6 @@ st.header("Global price of coffee - summary statistics", divider = "gray")
 st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 
 
-
 #### Sidebard
 with st.sidebar:
     # Show the filtered DataFrame
