@@ -395,62 +395,40 @@ st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 
 
 ### PPS visual
-import streamlit as st
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+st.header("Producer Profit Squeeze to Roaster", divider="gray")
 
-st.header("Producer Profit Squeeze to Roaster")
-
-# Example DataFrame (replace with your actual df_pps)
-dates = pd.date_range("2025-01-01", periods=10)
-df_pps = pd.DataFrame({
-    "ppi_coffee": np.random.rand(10),
-    "cpi_coffee": np.random.rand(10),
-    "pps_roaster": np.random.randn(10)
-}, index=dates)
-
-# Round numeric columns
+# Round numeric columns to 3 decimals (optional)
 df_pps = df_pps.round(3)
 
-# --- Streamlit slider to select date ---
-selected_date = st.slider(
-    "Select Date",
-    min_value=df_pps.index.min(),
-    max_value=df_pps.index.max(),
-    value=df_pps.index.max()
-)
+# Create figure and primary axis
+fig, ax1 = plt.subplots(figsize=(12,6))
 
-# Show values for the selected date
-st.subheader(f"Values for {selected_date.date()}")
-st.table(df_pps.loc[selected_date:selected_date])  # show single row as table
-
-# --- Optional: Plot the full chart ---
-fig, ax1 = plt.subplots(figsize=(10,5))
-ax1.plot(df_pps.index, df_pps['ppi_coffee'], label='Consumer Price', color='brown', linewidth=2)
-ax1.plot(df_pps.index, df_pps['cpi_coffee'], label='Roaster Cost', color='green', linewidth=2)
-ax1.set_xlabel("Date")
-ax1.set_ylabel("Index (Base=1 at 2010-01-01)")
+# Plot PPI and CPI lines
+ax1.plot(df_pps.index, df_pps['ppi_coffee'], label='Coffee Price Index for Consumer', color='brown', linewidth=2)
+ax1.plot(df_pps.index, df_pps['cpi_coffee'], label='Coffee Cost Index for Roaster', color='green', linewidth=2)
+ax1.set_xlabel('Date')
+ax1.set_ylabel('Index (Base = 1 at 2010-01-01)')
 ax1.grid(True)
 
+# Secondary axis for PPS Roaster bars
 ax2 = ax1.twinx()
-ax2.bar(df_pps.index, df_pps['pps_roaster'], alpha=0.4, color='blue', label='PPS to Roaster', width=2)
-ax2.set_ylabel("PPS to Roaster")
+ax2.bar(df_pps.index, df_pps['pps_roaster'], alpha=0.4, color='blue', label='PPS to Roaster', width=20)
+ax2.set_ylabel('PPS to Roaster')
+
+# Center the y-axis around 0
 max_val = np.max(np.abs(df_pps['pps_roaster']))
 ax2.set_ylim(-max_val*1.1, max_val*1.1)
 ax2.axhline(0, color='black', linewidth=1, linestyle='--')
-
-# Highlight the selected date
-ax1.scatter(selected_date, df_pps.loc[selected_date, 'ppi_coffee'], color='red', s=100, zorder=5)
-ax1.scatter(selected_date, df_pps.loc[selected_date, 'cpi_coffee'], color='orange', s=100, zorder=5)
-ax2.scatter(selected_date, df_pps.loc[selected_date, 'pps_roaster'], color='purple', s=100, zorder=5)
 
 # Combine legends
 lines, labels = ax1.get_legend_handles_labels()
 bars, bar_labels = ax2.get_legend_handles_labels()
 ax1.legend(lines + bars, labels + bar_labels, loc='upper left')
 
+plt.title('Coffee Price Index, Cost Index and PPS (Producer Profit Squeeze) to Roaster')
 plt.tight_layout()
+
+# Display in Streamlit
 st.pyplot(fig)
 
 
