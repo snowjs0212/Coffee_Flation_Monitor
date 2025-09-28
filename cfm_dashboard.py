@@ -372,8 +372,6 @@ st.header("Global price of coffee - summary statistics", divider = "gray")
 st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 
 
-# Display in Streamlit
-st.plotly_chart(fig, use_container_width=True)
 
 #### Sidebard
 with st.sidebar:
