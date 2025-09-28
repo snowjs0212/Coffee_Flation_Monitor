@@ -7,7 +7,6 @@ import os
 import requests
 from fredapi import Fred
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
 
 print(st.__version__)
 
