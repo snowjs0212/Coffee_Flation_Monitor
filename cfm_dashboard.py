@@ -376,26 +376,28 @@ st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 st.header("Producer Profit Squeeze to Roaster", divider="gray")
 
 # Round numeric columns
-df_pps = df_pps.round(3)
-
 max_val = np.max(np.abs(df_pps['pps_roaster']))
 
+# Minimal figure with hover
 fig = go.Figure([
     go.Scatter(x=df_pps.index, y=df_pps['ppi_coffee'], mode='lines',
-               name='Consumer Price', line=dict(color='brown', width=2)),
+               name='Consumer Price', line=dict(color='brown', width=2),
+               hoverinfo='x+y+name'),
     go.Scatter(x=df_pps.index, y=df_pps['cpi_coffee'], mode='lines',
-               name='Roaster Cost', line=dict(color='green', width=2)),
+               name='Roaster Cost', line=dict(color='green', width=2),
+               hoverinfo='x+y+name'),
     go.Bar(x=df_pps.index, y=df_pps['pps_roaster'], name='PPS to Roaster',
-           marker_color='blue', opacity=0.5, yaxis='y2')
+           marker_color='blue', opacity=0.5, yaxis='y2',
+           hoverinfo='x+y+name')
 ])
 
 fig.update_layout(
     xaxis_title='Date',
     yaxis=dict(title='Index'),
-    yaxis2=dict(title='PPS to Roaster', overlaying='y', side='right', range=[-max_val*1.1, max_val*1.1]),
+    yaxis2=dict(title='PPS to Roaster', overlaying='y', side='right',
+                range=[-max_val*1.1, max_val*1.1]),
     legend=dict(x=0.01, y=0.99),
-    template='plotly_white',
-    hovermode='x unified'
+    template='plotly_white'
 )
 
 st.plotly_chart(fig, use_container_width=True)
