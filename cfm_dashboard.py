@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May  7 12:37:55 2024
+
+@author: Joonsoo
+"""
 #### Packages
 import streamlit as st
 import altair as alt
@@ -14,6 +20,9 @@ print(st.__version__)
 #### API Keys
 #os.environ["ANTHROPIC_API_ID"] = st.secrets["ANTHROPIC_API_KEY"]
 
+#### Data import
+#fred_api_key_input = st.secrets["fred_api_key"]
+
 ### API key
 #fred_api_key_input = st.secrets["fred_api_key"]
 fred = Fred(api_key = fred_api_key_input)
@@ -25,15 +34,6 @@ df_robus.name = 'robustas'
 ### Global price of Coffee, Other Mild Arabica
 df_arabica = fred.get_series('PCOFFOTMUSDM')
 df_arabica.name = 'arabica'
-
-### Coffee PPI
-df_ppi_coffee = fred.get_series('WPU026301')
-df_ppi_coffee.name = 'ppi_coffee'
-
-### Coffee CPI
-df_cpi_coffee = fred.get_series('CUUR0000SEFP01')
-df_cpi_coffee.name = 'cpi_coffee'
-
 
 #### Data transformation
 ### Join data sources
@@ -69,6 +69,16 @@ df_base = df.tail(df_range)
 
 ### Melt the DataFrame to convert it to long format
 df_base = df_base[['Close Date', 'Robusta', 'Arabica',]]
+
+#### Make sure 'Close Date' is datetime
+df_base["Close Date"] = pd.to_datetime(df_base["Close Date"])
+
+#### Normalize to midnight to avoid time shift issues
+df_base["Close Date"] = pd.to_datetime(df_base["Close Date"]).dt.floor('D')
+
+#### Add exactly 1 day
+df_base["Close Date"] = df_base["Close Date"] + pd.Timedelta(days = 0.7)
+
 melted_df_base = df_base.melt(
     id_vars = "Close Date", 
     var_name = "Bean Type", 
@@ -104,11 +114,15 @@ selection = alt.selection_point(
 base_chart = (
     alt.Chart(melted_df_base).mark_line()
     .encode(
-        x = "Close Date:T",
+        x = alt.X(
+            "Close Date:T",   # bucket into month-year
+            axis = alt.Axis(title = "Close Date", format = "%b-%Y")  # MMM-YYYY format
+        ),
         y = alt.Y(
             "Price:Q", 
-            scale = alt.Scale(domain=[y_start, y_end])),
-        color = alt.Color("Bean Type:N", sort=output_list),
+            scale = alt.Scale(domain = [y_start, y_end])
+        ),
+        color = alt.Color("Bean Type:N", sort = output_list),
         # tooltip=['Ticker:N', 'Yield:Q']
     )
     .add_params(selection)
@@ -186,6 +200,13 @@ new_column_names = {
 }
 df_chg = df_chg.rename(columns = new_column_names)
 
+#### Make sure 'Close Date' is datetime
+df_chg["Close Date"] = pd.to_datetime(df_chg["Close Date"])
+
+#### Add exactly 1 day
+df_chg["Close Date"] = df_chg["Close Date"] + pd.Timedelta(days = 0.7)
+
+
 ### Melt the DataFrame to convert it to long format
 melted_df_chg = df_chg.melt(
     id_vars = "Close Date", 
@@ -217,15 +238,22 @@ selection = alt.selection_point(
     bind=input_dropdown,
 )
 
-### Basic line chart
+### Basic bar chart
 base_chart = (
-    alt.Chart(melted_df_chg).mark_line()
+    alt.Chart(melted_df_chg).mark_bar(size = 2.5)  # controls thickness
     .encode(
-        x = "Close Date:T",
+        # Use temporal with formatting
+        x = alt.X(
+            "yearmonth(Close Date):T", 
+            axis = alt.Axis(title = "Close Date", format = "%b-%Y")  # MMM-YYYY format
+        ),
         y = alt.Y(
-            "Change:Q", 
-            scale = alt.Scale(domain=[y_start, y_end])).axis(format='.1%'),
-        color = alt.Color("Bean Type:N", sort=output_list),
+            "Change:Q",
+            scale = alt.Scale(domain = [y_start, y_end]),
+            axis = alt.Axis(format = "%")
+        ),
+        color = alt.Color("Bean Type:N", sort = output_list),
+        xOffset = "Bean Type:N"   # side-by-side bars by Bean Type
         # tooltip=['Ticker:N', 'Yield:Q']
     )
     .add_params(selection)
@@ -315,6 +343,7 @@ df_sidebar['Robusta Chg'] = df_sidebar['Robusta Chg'].map('{:.1%}'.format)
 df_sidebar['Arabica Chg'] = df_sidebar['Arabica Chg'].map('{:.1%}'.format)
 
 
+<<<<<<< HEAD
 #### CPI & PPI
 ### Data merge
 df_ppi_cpi = pd.merge(
@@ -333,13 +362,15 @@ df_pps = df_pps_stg/base_values
 df_pps['pps_roaster'] = df_pps['cpi_coffee'] - df_pps['ppi_coffee']
 df_pps = df_pps[df_pps.index >= '2010-01-01'].round(3)
 
+=======
+>>>>>>> parent of f935981 (Update cfm_dashboard.py)
 #######################################################################################################
 #### Streamlit visualization
 ### Headers
-st.set_page_config(page_title = "Coffee-flation Monitor", page_icon="☕")
-st.title("Coffee-flation Monitor Dashboard :coffee:")
+st.set_page_config(page_title = "Coffee-flation", page_icon="☕")
+st.title("Coffee-flation Dashboard :coffee:")
 st.text("This open-source dashboard aids small coffee roasters \nin optimizing cost efficiency by providing insights into \nthe price fluctuations of essential coffee beans. \n\nWe believe that technology should serve our local businesses!")
-st.write(f"Developed and distributed by [**LookUp Consulting LLC**](https://www.linkedin.com/company/lookup-consulting)")
+st.write(f"Developed and distributed by [**LookUp Consulting LLC**](https://www.lookupconsultancy.com/)")
 
 ### Line chart - base chart
 st.header("Global price of coffee - monthly trends", divider = "gray")
@@ -371,6 +402,7 @@ st.altair_chart(
 st.header("Global price of coffee - summary statistics", divider = "gray")
 st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -436,6 +468,8 @@ fig.update_layout(
 # Display in Streamlit
 st.plotly_chart(fig, use_container_width=True)
 
+=======
+>>>>>>> parent of f935981 (Update cfm_dashboard.py)
 #### Sidebard
 with st.sidebar:
     # Show the filtered DataFrame
