@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue May  7 12:37:55 2024
-
-@author: Joonsoo
-"""
 #### Packages
 import streamlit as st
 import altair as alt
@@ -19,9 +13,6 @@ print(st.__version__)
 #### API Keys
 #os.environ["ANTHROPIC_API_ID"] = st.secrets["ANTHROPIC_API_KEY"]
 
-#### Data import
-#fred_api_key_input = st.secrets["fred_api_key"]
-
 ### API key
 fred_api_key_input = st.secrets["fred_api_key"]
 fred = Fred(api_key = fred_api_key_input)
@@ -33,6 +24,15 @@ df_robus.name = 'robustas'
 ### Global price of Coffee, Other Mild Arabica
 df_arabica = fred.get_series('PCOFFOTMUSDM')
 df_arabica.name = 'arabica'
+
+### Coffee PPI
+df_ppi_coffee = fred.get_series('WPU026301')
+df_ppi_coffee.name = 'ppi_coffee'
+
+### Coffee CPI
+df_cpi_coffee = fred.get_series('CUUR0000SEFP01')
+df_cpi_coffee.name = 'cpi_coffee'
+
 
 #### Data transformation
 ### Join data sources
@@ -68,16 +68,6 @@ df_base = df.tail(df_range)
 
 ### Melt the DataFrame to convert it to long format
 df_base = df_base[['Close Date', 'Robusta', 'Arabica',]]
-
-#### Make sure 'Close Date' is datetime
-df_base["Close Date"] = pd.to_datetime(df_base["Close Date"])
-
-#### Normalize to midnight to avoid time shift issues
-df_base["Close Date"] = pd.to_datetime(df_base["Close Date"]).dt.floor('D')
-
-#### Add exactly 1 day
-df_base["Close Date"] = df_base["Close Date"] + pd.Timedelta(days = 0.7)
-
 melted_df_base = df_base.melt(
     id_vars = "Close Date", 
     var_name = "Bean Type", 
@@ -113,15 +103,11 @@ selection = alt.selection_point(
 base_chart = (
     alt.Chart(melted_df_base).mark_line()
     .encode(
-        x = alt.X(
-            "Close Date:T",   # bucket into month-year
-            axis = alt.Axis(title = "Close Date", format = "%b-%Y")  # MMM-YYYY format
-        ),
+        x = "Close Date:T",
         y = alt.Y(
             "Price:Q", 
-            scale = alt.Scale(domain = [y_start, y_end])
-        ),
-        color = alt.Color("Bean Type:N", sort = output_list),
+            scale = alt.Scale(domain=[y_start, y_end])),
+        color = alt.Color("Bean Type:N", sort=output_list),
         # tooltip=['Ticker:N', 'Yield:Q']
     )
     .add_params(selection)
@@ -199,13 +185,6 @@ new_column_names = {
 }
 df_chg = df_chg.rename(columns = new_column_names)
 
-#### Make sure 'Close Date' is datetime
-df_chg["Close Date"] = pd.to_datetime(df_chg["Close Date"])
-
-#### Add exactly 1 day
-df_chg["Close Date"] = df_chg["Close Date"] + pd.Timedelta(days = 0.7)
-
-
 ### Melt the DataFrame to convert it to long format
 melted_df_chg = df_chg.melt(
     id_vars = "Close Date", 
@@ -237,22 +216,15 @@ selection = alt.selection_point(
     bind=input_dropdown,
 )
 
-### Basic bar chart
+### Basic line chart
 base_chart = (
-    alt.Chart(melted_df_chg).mark_bar(size = 2.5)  # controls thickness
+    alt.Chart(melted_df_chg).mark_line()
     .encode(
-        # Use temporal with formatting
-        x = alt.X(
-            "yearmonth(Close Date):T", 
-            axis = alt.Axis(title = "Close Date", format = "%b-%Y")  # MMM-YYYY format
-        ),
+        x = "Close Date:T",
         y = alt.Y(
-            "Change:Q",
-            scale = alt.Scale(domain = [y_start, y_end]),
-            axis = alt.Axis(format = "%")
-        ),
-        color = alt.Color("Bean Type:N", sort = output_list),
-        xOffset = "Bean Type:N"   # side-by-side bars by Bean Type
+            "Change:Q", 
+            scale = alt.Scale(domain=[y_start, y_end])).axis(format='.1%'),
+        color = alt.Color("Bean Type:N", sort=output_list),
         # tooltip=['Ticker:N', 'Yield:Q']
     )
     .add_params(selection)
@@ -342,13 +314,32 @@ df_sidebar['Robusta Chg'] = df_sidebar['Robusta Chg'].map('{:.1%}'.format)
 df_sidebar['Arabica Chg'] = df_sidebar['Arabica Chg'].map('{:.1%}'.format)
 
 
+#### CPI & PPI
+### Data merge
+df_ppi_cpi = pd.merge(
+    df_ppi_coffee, 
+    df_cpi_coffee,
+    left_index = True
+    ,right_index = True)
+
+### Data pre-proc
+## Create data set for PPS concept
+df_pps_stg = df_ppi_cpi[['ppi_coffee', 'cpi_coffee']][df_ppi_cpi.index >= '1997-01-01'] 
+base_values = df_pps_stg.loc['2015-01-01'] 
+df_pps = df_pps_stg/base_values 
+
+## Data transformation
+df_pps['pps_roaster'] = df_pps['cpi_coffee'] - df_pps['ppi_coffee']
+df_pps = df_pps[df_pps.index >= '2010-01-01']
+
+
 #######################################################################################################
 #### Streamlit visualization
 ### Headers
-st.set_page_config(page_title = "Coffee-flation", page_icon="☕")
-st.title("Coffee-flation Dashboard :coffee:")
+st.set_page_config(page_title = "Coffee-flation Monitor", page_icon="☕")
+st.title("Coffee-flation Monitor Dashboard :coffee:")
 st.text("This open-source dashboard aids small coffee roasters \nin optimizing cost efficiency by providing insights into \nthe price fluctuations of essential coffee beans. \n\nWe believe that technology should serve our local businesses!")
-st.write(f"Developed and distributed by [**LookUp Consulting LLC**](https://www.lookupconsultancy.com/)")
+st.write(f"Developed and distributed by [**LookUp Consulting LLC**](https://www.linkedin.com/company/lookup-consulting)")
 
 ### Line chart - base chart
 st.header("Global price of coffee - monthly trends", divider = "gray")
@@ -379,6 +370,41 @@ st.altair_chart(
 ### Summary statistics
 st.header("Global price of coffee - summary statistics", divider = "gray")
 st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
+
+
+#### PPS Display
+st.header("Producer Profit Squeeze to Roaster", divider = "gray")
+
+# Create figure and primary axis
+fig, ax1 = plt.subplots(figsize=(12,6))
+
+# Plot PPI and CPI lines
+ax1.plot(df_pps.index, df_pps['ppi_coffee'], label='Coffee Price Index for Consumer', color='brown', linewidth=2)
+ax1.plot(df_pps.index, df_pps['cpi_coffee'], label='Coffee Cost Index for Roaster', color='green', linewidth=2)
+ax1.set_xlabel('Date')
+ax1.set_ylabel('Index')
+ax1.grid(True)
+
+# Secondary axis for PPS Roaster bars
+ax2 = ax1.twinx()
+ax2.bar(df_pps.index, df_pps['pps_roaster'], alpha=0.4, color='blue', label='PPS to Roaster', width=20)
+ax2.set_ylabel('PPS to Roaster')
+
+# Center the y-axis around 0
+max_val = np.max(np.abs(df_pps['pps_roaster']))  # find largest magnitude
+ax2.set_ylim(-max_val*1.1, max_val*1.1)  # slightly larger for padding
+ax2.axhline(0, color='black', linewidth=1, linestyle='--')
+
+# Combine legends
+lines, labels = ax1.get_legend_handles_labels()
+bars, bar_labels = ax2.get_legend_handles_labels()
+ax1.legend(lines + bars, labels + bar_labels, loc='upper left')
+
+plt.title('Coffee Price Index, Cost Index and PPS (Producer Profit Squeeze) to Roaster')
+plt.tight_layout()
+
+# Display in Streamlit
+st.pyplot(fig)
 
 #### Sidebard
 with st.sidebar:
