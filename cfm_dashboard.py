@@ -7,6 +7,7 @@ import os
 import requests
 from fredapi import Fred
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 print(st.__version__)
 
@@ -330,8 +331,7 @@ df_pps = df_pps_stg/base_values
 
 ## Data transformation
 df_pps['pps_roaster'] = df_pps['cpi_coffee'] - df_pps['ppi_coffee']
-df_pps = df_pps[df_pps.index >= '2010-01-01']
-
+df_pps = df_pps[df_pps.index >= '2010-01-01'].round(3)
 
 #######################################################################################################
 #### Streamlit visualization
@@ -372,39 +372,62 @@ st.header("Global price of coffee - summary statistics", divider = "gray")
 st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 
 
-#### PPS Display
-st.header("Producer Profit Squeeze to Roaster", divider = "gray")
+st.header("Producer Profit Squeeze to Roaster", divider="gray")
 
-# Create figure and primary axis
-fig, ax1 = plt.subplots(figsize=(12,6))
+# Example DataFrame (replace with your df_pps)
+# df_pps = pd.read_csv("your_data.csv", parse_dates=['Date'])
+# df_pps.set_index('Date', inplace=True)
 
-# Plot PPI and CPI lines
-ax1.plot(df_pps.index, df_pps['ppi_coffee'], label='Coffee Price Index for Consumer', color='brown', linewidth=2)
-ax1.plot(df_pps.index, df_pps['cpi_coffee'], label='Coffee Cost Index for Roaster', color='green', linewidth=2)
-ax1.set_xlabel('Date')
-ax1.set_ylabel('Index')
-ax1.grid(True)
+# Create interactive figure
+fig = go.Figure()
 
-# Secondary axis for PPS Roaster bars
-ax2 = ax1.twinx()
-ax2.bar(df_pps.index, df_pps['pps_roaster'], alpha=0.4, color='blue', label='PPS to Roaster', width=20)
-ax2.set_ylabel('PPS to Roaster')
+# Add Coffee Price Index line
+fig.add_trace(
+    go.Scatter(
+        x=df_pps.index,
+        y=df_pps['ppi_coffee'],
+        mode='lines',
+        name='Consumer Price',
+        line=dict(color='brown', width=2)
+    )
+)
 
-# Center the y-axis around 0
-max_val = np.max(np.abs(df_pps['pps_roaster']))  # find largest magnitude
-ax2.set_ylim(-max_val*1.1, max_val*1.1)  # slightly larger for padding
-ax2.axhline(0, color='black', linewidth=1, linestyle='--')
+# Add Coffee Cost Index line
+fig.add_trace(
+    go.Scatter(
+        x=df_pps.index,
+        y=df_pps['cpi_coffee'],
+        mode='lines',
+        name='Roaster Cost',
+        line=dict(color='green', width=2)
+    )
+)
 
-# Combine legends
-lines, labels = ax1.get_legend_handles_labels()
-bars, bar_labels = ax2.get_legend_handles_labels()
-ax1.legend(lines + bars, labels + bar_labels, loc='upper left')
+# Add PPS Roaster bar on secondary y-axis
+fig.add_trace(
+    go.Bar(
+        x=df_pps.index,
+        y=df_pps['pps_roaster'],
+        name='PPS to Roaster',
+        marker_color='blue',
+        opacity=0.5,
+        yaxis='y2'
+    )
+)
 
-plt.title('Coffee Price Index, Cost Index and PPS (Producer Profit Squeeze) to Roaster')
-plt.tight_layout()
+# Update layout for secondary axis
+max_val = np.max(np.abs(df_pps['pps_roaster']))
+fig.update_layout(
+    xaxis_title='Date',
+    yaxis=dict(title='Index'),
+    yaxis2=dict(title='PPS to Roaster', overlaying='y', side='right', range=[-max_val*1.1, max_val*1.1]),
+    legend=dict(x=0.01, y=0.99),
+    template='plotly_white',
+    hovermode='x unified'
+)
 
 # Display in Streamlit
-st.pyplot(fig)
+st.plotly_chart(fig, use_container_width=True)
 
 #### Sidebard
 with st.sidebar:
