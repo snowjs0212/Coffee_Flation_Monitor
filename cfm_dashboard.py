@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue May  7 12:37:55 2024
-
-@author: Joonsoo
-"""
 #### Packages
 import streamlit as st
 import altair as alt
@@ -17,7 +11,7 @@ import matplotlib.pyplot as plt
 print(st.__version__)
 
 ### API key
-#fred_api_key_input = st.secrets["fred_api_key"]
+fred_api_key_input = st.secrets["fred_api_key"]
 fred = Fred(api_key = fred_api_key_input)
 
 ### Global price of Coffee, Robustas
@@ -43,6 +37,23 @@ df = pd.merge(
     df_arabica,
     left_index = True
     ,right_index = True)
+
+#### CPI & PPI
+df_ppi_cpi = pd.merge(
+    df_ppi_coffee, 
+    df_cpi_coffee,
+    left_index = True
+    ,right_index = True)
+
+### Data pre-proc
+## Create data set for PPS concept
+df_pps_stg = df_ppi_cpi[['ppi_coffee', 'cpi_coffee']][df_ppi_cpi.index >= '1997-01-01'] 
+base_values = df_pps_stg.loc['2015-01-01'] 
+df_pps = df_pps_stg/base_values 
+
+## Data transformation
+df_pps['pps_roaster'] = df_pps['cpi_coffee'] - df_pps['ppi_coffee']
+df_pps = df_pps[df_pps.index >= '2010-01-01'].round(3)
 
 ### Data format changes
 df['Close Date'] = df.index
