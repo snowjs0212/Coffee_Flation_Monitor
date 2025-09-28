@@ -376,38 +376,42 @@ st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 #### PPS Display
 st.header("Producer Profit Squeeze to Roaster", divider="gray")
 
-# Round numeric columns to 3 decimals
+# Round numeric columns
 df_pps = df_pps.round(3)
 
-# Reset index to make 'Date' a column for Altair
+# Reset index for Altair
 df_pps_reset = df_pps.reset_index().rename(columns={'index': 'Date'})
 
-# Base chart for lines
+# Find max absolute PPS value for centering y-axis
+max_val = np.max(np.abs(df_pps_reset['pps_roaster']))
+
+# Line chart for PPI and CPI
 line_chart = alt.Chart(df_pps_reset).transform_fold(
     ['ppi_coffee', 'cpi_coffee'],
     as_=['Series', 'Value']
 ).mark_line().encode(
     x='Date:T',
     y='Value:Q',
-    color='Series:N',
-    tooltip=['Date:T', 'Series:N', 'Value:Q']
+    color=alt.Color('Series:N', scale=alt.Scale(domain=['ppi_coffee','cpi_coffee'],
+                                                range=['brown','green'])),
+    tooltip=['Date:T','Series:N','Value:Q']
 )
 
-# Bar chart for PPS on secondary axis
-bar_chart = alt.Chart(df_pps_reset).mark_bar(opacity=0.5, color='blue').encode(
+# Bar chart for PPS to Roaster
+bar_chart = alt.Chart(df_pps_reset).mark_bar(opacity=0.4, color='blue').encode(
     x='Date:T',
-    y=alt.Y('pps_roaster:Q', title='PPS to Roaster'),
-    tooltip=['Date:T', 'pps_roaster:Q']
+    y=alt.Y('pps_roaster:Q', scale=alt.Scale(domain=[-max_val*1.1, max_val*1.1]), title='PPS to Roaster'),
+    tooltip=['Date:T','pps_roaster:Q']
 )
 
-# Combine charts with layered chart
+# Layer charts with independent y-axis
 combined_chart = alt.layer(line_chart, bar_chart).resolve_scale(
-    y='independent'  # allow independent y-axes
+    y='independent'
 ).properties(
-    width=800,
-    height=400,
+    width=900,
+    height=500,
     title='Coffee Price Index, Cost Index and PPS (Producer Profit Squeeze) to Roaster'
-).interactive()  # enable zoom and pan
+).interactive()  # enable zoom/pan
 
 # Display in Streamlit
 st.altair_chart(combined_chart, use_container_width=True)
