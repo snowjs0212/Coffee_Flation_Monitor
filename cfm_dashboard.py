@@ -490,7 +490,6 @@ fig.add_trace(
     )
 )
 
->>>>>>> parent of 95db464 (Revert "PPS Visualization Update")
 # Update layout for secondary axis
 max_val = np.max(np.abs(df_pps['pps_roaster']))
 fig.update_layout(
@@ -503,10 +502,6 @@ fig.update_layout(
 )
 
 # Display in Streamlit
-<<<<<<< HEAD
->>>>>>> parent of 95db464 (Revert "PPS Visualization Update")
-=======
->>>>>>> parent of 95db464 (Revert "PPS Visualization Update")
 st.plotly_chart(fig, use_container_width=True)
 
 #### Sidebard
