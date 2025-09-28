@@ -372,7 +372,10 @@ st.header("Global price of coffee - summary statistics", divider = "gray")
 st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 
 
+<<<<<<< HEAD
 ### PPS
+=======
+>>>>>>> parent of 95db464 (Revert "PPS Visualization Update")
 st.header("Producer Profit Squeeze to Roaster", divider="gray")
 
 # Example DataFrame (replace with your df_pps)
