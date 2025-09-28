@@ -343,27 +343,6 @@ df_sidebar['Robusta Chg'] = df_sidebar['Robusta Chg'].map('{:.1%}'.format)
 df_sidebar['Arabica Chg'] = df_sidebar['Arabica Chg'].map('{:.1%}'.format)
 
 
-<<<<<<< HEAD
-#### CPI & PPI
-### Data merge
-df_ppi_cpi = pd.merge(
-    df_ppi_coffee, 
-    df_cpi_coffee,
-    left_index = True
-    ,right_index = True)
-
-### Data pre-proc
-## Create data set for PPS concept
-df_pps_stg = df_ppi_cpi[['ppi_coffee', 'cpi_coffee']][df_ppi_cpi.index >= '1997-01-01'] 
-base_values = df_pps_stg.loc['2015-01-01'] 
-df_pps = df_pps_stg/base_values 
-
-## Data transformation
-df_pps['pps_roaster'] = df_pps['cpi_coffee'] - df_pps['ppi_coffee']
-df_pps = df_pps[df_pps.index >= '2010-01-01'].round(3)
-
-=======
->>>>>>> parent of f935981 (Update cfm_dashboard.py)
 #######################################################################################################
 #### Streamlit visualization
 ### Headers
@@ -402,10 +381,6 @@ st.altair_chart(
 st.header("Global price of coffee - summary statistics", divider = "gray")
 st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 
-<<<<<<< HEAD
-
-=======
->>>>>>> parent of f935981 (Update cfm_dashboard.py)
 #### Sidebard
 with st.sidebar:
     # Show the filtered DataFrame
