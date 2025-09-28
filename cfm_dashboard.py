@@ -394,6 +394,53 @@ st.header("Global price of coffee - summary statistics", divider = "gray")
 st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 
 
+### PPS visual
+import streamlit as st
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+# Example: Replace with your actual DataFrame
+# df_pps = pd.read_csv("your_data.csv", parse_dates=['Date'])
+# df_pps.set_index('Date', inplace=True)
+
+st.header("Producer Profit Squeeze to Roaster", divider="gray")
+
+# Round numeric columns to 3 decimals (optional)
+df_pps = df_pps.round(3)
+
+# Create figure and primary axis
+fig, ax1 = plt.subplots(figsize=(12,6))
+
+# Plot PPI and CPI lines
+ax1.plot(df_pps.index, df_pps['ppi_coffee'], label='Coffee Price Index for Consumer', color='brown', linewidth=2)
+ax1.plot(df_pps.index, df_pps['cpi_coffee'], label='Coffee Cost Index for Roaster', color='green', linewidth=2)
+ax1.set_xlabel('Date')
+ax1.set_ylabel('Index')
+ax1.grid(True)
+
+# Secondary axis for PPS Roaster bars
+ax2 = ax1.twinx()
+ax2.bar(df_pps.index, df_pps['pps_roaster'], alpha=0.4, color='blue', label='PPS to Roaster', width=20)
+ax2.set_ylabel('PPS to Roaster')
+
+# Center the y-axis around 0
+max_val = np.max(np.abs(df_pps['pps_roaster']))
+ax2.set_ylim(-max_val*1.1, max_val*1.1)
+ax2.axhline(0, color='black', linewidth=1, linestyle='--')
+
+# Combine legends
+lines, labels = ax1.get_legend_handles_labels()
+bars, bar_labels = ax2.get_legend_handles_labels()
+ax1.legend(lines + bars, labels + bar_labels, loc='upper left')
+
+plt.title('Coffee Price Index, Cost Index and PPS (Producer Profit Squeeze) to Roaster')
+plt.tight_layout()
+
+# Display in Streamlit
+st.pyplot(fig)
+
+
 #### Sidebard
 with st.sidebar:
     # Show the filtered DataFrame
