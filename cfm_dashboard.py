@@ -7,7 +7,7 @@ import os
 import requests
 from fredapi import Fred
 import matplotlib.pyplot as plt
-import altair as alt
+import plotly.graph_objects as go
 
 print(st.__version__)
 
@@ -15,7 +15,7 @@ print(st.__version__)
 #os.environ["ANTHROPIC_API_ID"] = st.secrets["ANTHROPIC_API_KEY"]
 
 ### API key
-fred_api_key_input = st.secrets["fred_api_key"]
+#fred_api_key_input = st.secrets["fred_api_key"]
 fred = Fred(api_key = fred_api_key_input)
 
 ### Global price of Coffee, Robustas
@@ -331,8 +331,7 @@ df_pps = df_pps_stg/base_values
 
 ## Data transformation
 df_pps['pps_roaster'] = df_pps['cpi_coffee'] - df_pps['ppi_coffee']
-df_pps = df_pps[df_pps.index >= '2010-01-01']
-
+df_pps = df_pps[df_pps.index >= '2010-01-01'].round(3)
 
 #######################################################################################################
 #### Streamlit visualization
@@ -373,48 +372,62 @@ st.header("Global price of coffee - summary statistics", divider = "gray")
 st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 
 
-#### PPS Display
 st.header("Producer Profit Squeeze to Roaster", divider="gray")
 
-# Round numeric columns
-df_pps = df_pps.round(3)
+# Example DataFrame (replace with your df_pps)
+# df_pps = pd.read_csv("your_data.csv", parse_dates=['Date'])
+# df_pps.set_index('Date', inplace=True)
 
-# Reset index for Altair
-df_pps_reset = df_pps.reset_index().rename(columns={'index': 'Date'})
+# Create interactive figure
+fig = go.Figure()
 
-# Find max absolute PPS value for centering y-axis
-max_val = np.max(np.abs(df_pps_reset['pps_roaster']))
-
-# Line chart for PPI and CPI
-line_chart = alt.Chart(df_pps_reset).transform_fold(
-    ['ppi_coffee', 'cpi_coffee'],
-    as_=['Series', 'Value']
-).mark_line().encode(
-    x='Date:T',
-    y='Value:Q',
-    color=alt.Color('Series:N', scale=alt.Scale(domain=['ppi_coffee','cpi_coffee'],
-                                                range=['brown','green'])),
-    tooltip=['Date:T','Series:N','Value:Q']
+# Add Coffee Price Index line
+fig.add_trace(
+    go.Scatter(
+        x=df_pps.index,
+        y=df_pps['ppi_coffee'],
+        mode='lines',
+        name='Consumer Price',
+        line=dict(color='brown', width=2)
+    )
 )
 
-# Bar chart for PPS to Roaster
-bar_chart = alt.Chart(df_pps_reset).mark_bar(opacity=0.4, color='blue').encode(
-    x='Date:T',
-    y=alt.Y('pps_roaster:Q', scale=alt.Scale(domain=[-max_val*1.1, max_val*1.1]), title='PPS to Roaster'),
-    tooltip=['Date:T','pps_roaster:Q']
+# Add Coffee Cost Index line
+fig.add_trace(
+    go.Scatter(
+        x=df_pps.index,
+        y=df_pps['cpi_coffee'],
+        mode='lines',
+        name='Roaster Cost',
+        line=dict(color='green', width=2)
+    )
 )
 
-# Layer charts with independent y-axis
-combined_chart = alt.layer(line_chart, bar_chart).resolve_scale(
-    y='independent'
-).properties(
-    width=900,
-    height=500,
-    title='Coffee Price Index, Cost Index and PPS (Producer Profit Squeeze) to Roaster'
-).interactive()  # enable zoom/pan
+# Add PPS Roaster bar on secondary y-axis
+fig.add_trace(
+    go.Bar(
+        x=df_pps.index,
+        y=df_pps['pps_roaster'],
+        name='PPS to Roaster',
+        marker_color='blue',
+        opacity=0.5,
+        yaxis='y2'
+    )
+)
+
+# Update layout for secondary axis
+max_val = np.max(np.abs(df_pps['pps_roaster']))
+fig.update_layout(
+    xaxis_title='Date',
+    yaxis=dict(title='Index'),
+    yaxis2=dict(title='PPS to Roaster', overlaying='y', side='right', range=[-max_val*1.1, max_val*1.1]),
+    legend=dict(x=0.01, y=0.99),
+    template='plotly_white',
+    hovermode='x unified'
+)
 
 # Display in Streamlit
-st.altair_chart(combined_chart, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True)
 
 #### Sidebard
 with st.sidebar:
