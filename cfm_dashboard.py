@@ -16,15 +16,8 @@ import matplotlib.pyplot as plt
 
 print(st.__version__)
 
-#### API Keys
-#os.environ["ANTHROPIC_API_ID"] = st.secrets["ANTHROPIC_API_KEY"]
-
-#### Data import
-#fred_api_key_input = st.secrets["fred_api_key"]
-
 ### API key
 #fred_api_key_input = st.secrets["fred_api_key"]
-fred_api_key_input = '7a3a846e27994737590201d1ed80f0f1'
 fred = Fred(api_key = fred_api_key_input)
 
 ### Global price of Coffee, Robustas
@@ -34,6 +27,14 @@ df_robus.name = 'robustas'
 ### Global price of Coffee, Other Mild Arabica
 df_arabica = fred.get_series('PCOFFOTMUSDM')
 df_arabica.name = 'arabica'
+
+### Coffee PPI
+df_ppi_coffee = fred.get_series('WPU026301')
+df_ppi_coffee.name = 'ppi_coffee'
+
+### Coffee CPI
+df_cpi_coffee = fred.get_series('CUUR0000SEFP01')
+df_cpi_coffee.name = 'cpi_coffee'
 
 #### Data transformation
 ### Join data sources
