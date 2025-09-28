@@ -373,6 +373,7 @@ st.write(df_summary_stat[['Robusta', 'Arabica', 'Robusta Chg', 'Arabica Chg']])
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ### PPS
 st.header("Producer Profit Squeeze to Roaster", divider="gray")
 
@@ -445,6 +446,51 @@ fig.add_trace(
     )
 )
 
+=======
+st.header("Producer Profit Squeeze to Roaster", divider="gray")
+
+# Example DataFrame (replace with your df_pps)
+# df_pps = pd.read_csv("your_data.csv", parse_dates=['Date'])
+# df_pps.set_index('Date', inplace=True)
+
+# Create interactive figure
+fig = go.Figure()
+
+# Add Coffee Price Index line
+fig.add_trace(
+    go.Scatter(
+        x=df_pps.index,
+        y=df_pps['ppi_coffee'],
+        mode='lines',
+        name='Consumer Price',
+        line=dict(color='brown', width=2)
+    )
+)
+
+# Add Coffee Cost Index line
+fig.add_trace(
+    go.Scatter(
+        x=df_pps.index,
+        y=df_pps['cpi_coffee'],
+        mode='lines',
+        name='Roaster Cost',
+        line=dict(color='green', width=2)
+    )
+)
+
+# Add PPS Roaster bar on secondary y-axis
+fig.add_trace(
+    go.Bar(
+        x=df_pps.index,
+        y=df_pps['pps_roaster'],
+        name='PPS to Roaster',
+        marker_color='blue',
+        opacity=0.5,
+        yaxis='y2'
+    )
+)
+
+>>>>>>> parent of 95db464 (Revert "PPS Visualization Update")
 # Update layout for secondary axis
 max_val = np.max(np.abs(df_pps['pps_roaster']))
 fig.update_layout(
@@ -457,6 +503,9 @@ fig.update_layout(
 )
 
 # Display in Streamlit
+<<<<<<< HEAD
+>>>>>>> parent of 95db464 (Revert "PPS Visualization Update")
+=======
 >>>>>>> parent of 95db464 (Revert "PPS Visualization Update")
 st.plotly_chart(fig, use_container_width=True)
 
